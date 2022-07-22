@@ -81,6 +81,17 @@ void init_gdtidt(void);
 void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar);
 void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
+// fifo.c
+struct FIFO8 {
+    unsigned char *buf;
+    int p, q, size, free, flags;
+};
+
+void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buffer);
+int fifo8_put(struct FIFO8 *fifo, unsigned char data);
+int fifo8_get(struct FIFO8 *fifo);
+int fifo8_status(struct FIFO8 *fifo);
+
 // int.c
 void init_pic(void);
 void inthandler21(int *esp);
@@ -100,6 +111,7 @@ void inthandler2c(int *esp);
 #define PIC1_ICW3		0x00a1
 #define PIC1_ICW4		0x00a1
 
+
 #define PORT_KEYDAT             0x0060 // keyboard port number
 #define PORT_KEYSTA             0x0064
 #define PORT_KEYCMD             0x0064
@@ -107,13 +119,5 @@ void inthandler2c(int *esp);
 #define KEYCMD_WRITE_MODE       0x60
 #define KBC_MODE                0x47
 
-// fifo.c
-struct FIFO8 {
-    unsigned char *buf;
-    int p, q, size, free, flags;
-};
-
-void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buffer);
-int fifo8_put(struct FIFO8 *fifo, unsigned char data);
-int fifo8_get(struct FIFO8 *fifo);
-int fifo8_status(struct FIFO8 *fifo);
+#define KEYCMD_SENDTO_MOUSE		0xd4
+#define MOUSECMD_ENABLE			0xf4
