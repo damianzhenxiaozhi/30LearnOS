@@ -38,19 +38,6 @@ unsigned int memtest(unsigned int start, unsigned end)
     return i;
 }
 
-#define MEMMAN_FREES 4090
-
-struct FREEINFO
-{
-    unsigned int addr, size;
-};
-
-struct MEMMAN
-{
-    int frees, maxfrees, lostsize, losts;
-    struct FREEINFO free[MEMMAN_FREES];
-};
-
 void memman_init(struct MEMMAN *man)
 {
     man->frees = 0;
@@ -99,13 +86,14 @@ unsigned int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int siz
 {
     int i, j;
     // free[] order by addr
-    for (i = 0; i < man->free; i++)
+    for (i = 0; i < man->frees; i++)
     {
         if (man->free[i].addr > addr)
         {
             break;
         }
     }
+    // free[i-1].addr < addr < free[i].addr
     if (i > 0) {
         if (man->free[i-1].addr + man->free[i-1].size == addr) {
             man->free[i-1].size += size;
@@ -122,8 +110,26 @@ unsigned int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int siz
         }
     }
     if (i < man->frees) {
+        if (addr + size == man->free[i].addr) {
+            man->free[i].addr = addr;
+            man->free[i].size += size;
+            return 0;
+        }
+    }
+    if (man->frees < MEMMAN_FREES) {
+        for (j = man->frees; j > i; j--) {
+            man->free[j] = man->free[j-1];
+        }
+        man->frees++;
+        man->free[i].addr = addr;
+        man->free[i].size = size;
+        if (man->frees > man->maxfrees) {
+            man->maxfrees = man->frees;
+        }
         return 0;
     }
 
-    return 0;
+    man->losts++;
+    man->lostsize += size;
+    return -1;
 }

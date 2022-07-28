@@ -1,11 +1,15 @@
 #include "bootpack.h"
 
+#define MEMMAN_ADDR		0x003c0000
+
 void HariMain(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *)ADR_BOOTINFO;
 	char s[40], mcursor[16 * 16], keybuf[32], mousebuf[128];
 	int mx, my, i;
 	struct MOUSE_DEC mdec;
+	unsigned int mem_last_addr;
+	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 
 	init_gdtidt(); // gdt idt init
 	init_pic();	   // pic init
@@ -19,6 +23,11 @@ void HariMain(void)
 	init_keyboard();
 	enable_mouse(&mdec);
 
+	mem_last_addr = memtest(0x00400000, 0xbfffffff);
+	memman_init(memman);
+	memman_free(memman, 0x000010000, 0x0009e000);
+	memman_free(memman, 0x00400000, mem_last_addr - 0x00400000);
+
 	init_palette();
 	init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
 	mx = (binfo->scrnx - 16) / 2;
@@ -28,8 +37,7 @@ void HariMain(void)
 	sprintf(s, "(%d, %d)", mx, my);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
-	i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-	sprintf(s, "memory %dMB", i);
+	sprintf(s, "memory stop at %dKB free: %dKB", mem_last_addr / 1024, memman_total(memman) / 1024);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 
 	for (;;)

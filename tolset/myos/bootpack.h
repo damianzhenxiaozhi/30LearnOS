@@ -135,8 +135,25 @@ void inthandler27(int *esp);
 #define PIC1_ICW4		0x00a1
 
 // mem.c
+#define MEMMAN_FREES 4090
+
+struct FREEINFO
+{
+    unsigned int addr, size;
+};
+
+struct MEMMAN
+{
+    int frees, maxfrees, lostsize, losts;
+    struct FREEINFO free[MEMMAN_FREES];
+};
+
 int load_cr0(void);
 void store_cr0(int cr0);
 unsigned int memtest(unsigned int start, unsigned end);
 unsigned int memtest_sub(unsigned int start, unsigned int end);
+void memman_init(struct MEMMAN *man);
+unsigned int memman_total(struct MEMMAN *man);
+unsigned int memman_alloc(struct MEMMAN *man, unsigned int size);
+unsigned int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size);
 
