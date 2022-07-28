@@ -1,22 +1,10 @@
 #include "bootpack.h"
 
-struct MOUSE_DEC
-{
-	unsigned char buf[3], phase;
-	int x, y, btn;
-};
-
-extern struct FIFO8 keyfifo, mousefifo;
-void wait_KBC_sendready(void);
-void init_keyboard();
-void enable_mouse(struct MOUSE_DEC *mdec);
-int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
-
 void HariMain(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *)ADR_BOOTINFO;
 	char s[40], mcursor[16 * 16], keybuf[32], mousebuf[128];
-	int mx, my, data, i;
+	int mx, my, i;
 	struct MOUSE_DEC mdec;
 
 	init_gdtidt(); // gdt idt init
@@ -29,6 +17,7 @@ void HariMain(void)
 	io_out8(PIC1_IMR, 0xef); // 11101111, bit12->mouse
 
 	init_keyboard();
+	enable_mouse(&mdec);
 
 	init_palette();
 	init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -39,7 +28,9 @@ void HariMain(void)
 	sprintf(s, "(%d, %d)", mx, my);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
-	enable_mouse(&mdec);
+	i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+	sprintf(s, "memory %dMB", i);
+	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 
 	for (;;)
 	{
@@ -52,17 +43,17 @@ void HariMain(void)
 		{
 			if (fifo8_status(&keyfifo) != 0)
 			{
-				data = fifo8_get(&keyfifo);
+				i = fifo8_get(&keyfifo);
 				io_sti();
-				sprintf(s, "%02X", data);
+				sprintf(s, "%02X", i);
 				boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 31, 31);
 				putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
 			}
 			else if (fifo8_status(&mousefifo) != 0)
 			{
-				data = fifo8_get(&mousefifo);
+				i = fifo8_get(&mousefifo);
 				io_sti();
-				if (mouse_decode(&mdec, data) != 0)
+				if (mouse_decode(&mdec, i) != 0)
 				{
 					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
 					if ((mdec.btn & 0x01) != 0)
@@ -107,88 +98,4 @@ void HariMain(void)
 			}
 		}
 	}
-}
-
-void wait_KBC_sendready(void)
-{
-	for (;;)
-	{
-		if ((io_in8(PORT_KEYSTA) & KEYSTA_SEND_NOTREADY) == 0)
-		{
-			break;
-		}
-	}
-	return;
-}
-
-void init_keyboard(void)
-{
-	wait_KBC_sendready();
-	io_out8(PORT_KEYCMD, KEYCMD_WRITE_MODE);
-	wait_KBC_sendready();
-	io_out8(PORT_KEYDAT, KBC_MODE);
-	wait_KBC_sendready();
-	return;
-}
-
-void enable_mouse(struct MOUSE_DEC *mdec)
-{
-	mdec->phase = 0;
-	wait_KBC_sendready();
-	io_out8(PORT_KEYCMD, KEYCMD_SENDTO_MOUSE);
-	wait_KBC_sendready();
-	io_out8(PORT_KEYDAT, MOUSECMD_ENABLE);
-	wait_KBC_sendready();
-	return;
-}
-
-int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat)
-{
-	if (mdec->phase == 0)
-	{
-		if (dat == 0xfa)
-		{
-			mdec->phase = 1;
-		}
-		return 0;
-	}
-
-	if (mdec->phase == 1)
-	{
-		if ((dat & 0xc8) == 0x08)
-		{
-			mdec->buf[0] = dat;
-			mdec->phase = 2;
-			return 0;
-		}
-	}
-
-	if (mdec->phase == 2)
-	{
-		mdec->buf[1] = dat;
-		mdec->phase = 3;
-		return 0;
-	}
-
-	if (mdec->phase == 3)
-	{
-		mdec->buf[2] = dat;
-		mdec->phase = 1;
-		mdec->btn = mdec->buf[0] & 0x7;
-		mdec->x = mdec->buf[1];
-		mdec->y = mdec->buf[2];
-
-		if ((mdec->buf[0] & 0x10) != 0)
-		{
-			mdec->x |= 0xffffff00;
-		}
-		if ((mdec->buf[0] & 0x20) != 0)
-		{
-			mdec->y |= 0xffffff00;
-		}
-		mdec->y = -mdec->y;
-		return 1;
-	}
-
-	return -1;
 }

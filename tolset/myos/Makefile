@@ -13,7 +13,8 @@ RULEFILE = $(TOOLPATH)haribote/haribote.rul
 EDIMG = $(TOOLPATH)edimg.exe
 IMGTOL = $(TOOLPATH)imgtol.com
 
-OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj int.obj fifo.obj
+OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj int.obj fifo.obj \
+	keyboard.obj mouse.obj mem.obj
 
 default:
 	$(MAKE) img
