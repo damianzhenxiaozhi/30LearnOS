@@ -8,7 +8,7 @@ void HariMain(void)
 	char s[40], mcursor[16 * 16], keybuf[32], mousebuf[128];
 	int mx, my, i;
 	struct MOUSE_DEC mdec;
-	unsigned int mem_last_addr;
+	unsigned int memtotal;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 
 	init_gdtidt(); // gdt idt init
@@ -23,10 +23,10 @@ void HariMain(void)
 	init_keyboard();
 	enable_mouse(&mdec);
 
-	mem_last_addr = memtest(0x00400000, 0xbfffffff);
+	memtotal = memtest(0x00400000, 0xbfffffff);
 	memman_init(memman);
 	memman_free(memman, 0x000010000, 0x0009e000);
-	memman_free(memman, 0x00400000, mem_last_addr - 0x00400000);
+	memman_free(memman, 0x00400000, memtotal - 0x00400000);
 
 	init_palette();
 	init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -37,7 +37,7 @@ void HariMain(void)
 	sprintf(s, "(%d, %d)", mx, my);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
-	sprintf(s, "memory stop at %dKB free: %dKB", mem_last_addr / 1024, memman_total(memman) / 1024);
+	sprintf(s, "memory stop at %dKB free: %dKB", memtotal / 1024, memman_total(memman) / 1024);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 
 	for (;;)
