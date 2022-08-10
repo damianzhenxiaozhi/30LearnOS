@@ -131,7 +131,7 @@ void putblock8_8(unsigned char *vram, int vxsize, int pxsize, int pysize, int px
 }
 
 
-void init_screen(unsigned char *vram, int x, int y)
+void init_screen8(unsigned char *vram, int x, int y)
 {
 	boxfill8(vram, x, COL8_008484,  0,         0,          x -  1, y - 29);
 	boxfill8(vram, x, COL8_C6C6C6,  0,         y - 28, x -  1, y - 28);
@@ -150,3 +150,4 @@ void init_screen(unsigned char *vram, int x, int y)
 	boxfill8(vram, x, COL8_FFFFFF, x - 47, y -  3, x -  4, y -  3);
 	boxfill8(vram, x, COL8_FFFFFF, x -  3, y - 24, x -  3, y -  3);
 }
+
