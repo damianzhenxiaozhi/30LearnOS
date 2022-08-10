@@ -1,7 +1,7 @@
 .vscode/
 omake/
 projects/
-tolset/
+tolset/*
 !tolset/myos/
 *.nas
 *.bin
@@ -11,6 +11,9 @@ tolset/
 *.lst
 *.obj
 *.gas
+*.bim
+*.img
+fdimage0.bin
 !asmhead.nas
 !ipl10.nas
 !naskfunc.nas
