@@ -1,6 +1,7 @@
 #include "bootpack.h"
+#include <stdio.h>
 
-#define MEMMAN_ADDR		0x003c0000
+void make_window8(unsigned char *buf, int xsize, int ysize, char *title);
 
 void HariMain(void)
 {
@@ -8,7 +9,7 @@ void HariMain(void)
 	char s[40], keybuf[32], mousebuf[128];
 	int mx, my, i;
 	struct MOUSE_DEC mdec;
-	unsigned int memtotal, count = 0;
+	unsigned int memtotal;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct SHTCTL *shtctl;
 	struct SHEET *sht_back, *sht_mouse, *sht_win;
@@ -20,7 +21,8 @@ void HariMain(void)
 
 	fifo8_init(&keyfifo, 32, keybuf);
 	fifo8_init(&mousefifo, 128, mousebuf);
-	io_out8(PIC0_IMR, 0xf9); // 11111001, bit2->slave, bit1->keyboard
+	init_pit();
+	io_out8(PIC0_IMR, 0xf8); // 11111000, bit2->slave, bit1->keyboard, bit0->pic timer
 	io_out8(PIC1_IMR, 0xef); // 11101111, bit12->mouse
 
 	init_keyboard();
@@ -28,16 +30,16 @@ void HariMain(void)
 
 	memtotal = memtest(0x00400000, 0xbfffffff);
 	memman_init(memman);
-	memman_free(memman, 0x000010000, 0x0009e000);
+	memman_free(memman, 0x00001000, 0x0009e000);
 	memman_free(memman, 0x00400000, memtotal - 0x00400000);
 
 	init_palette();
-	shtctl = sheet_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
+	shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
 	sht_back = sheet_alloc(shtctl);
 	sht_mouse = sheet_alloc(shtctl);
 	sht_win = sheet_alloc(shtctl);
 	buf_back = (unsigned char *)memman_alloc_4k(memman, binfo->scrnx * binfo->scrny);
-	buf_win = (unsigned char *)memman_alloc_4k(memman, 160 * 68);
+	buf_win = (unsigned char *)memman_alloc_4k(memman, 160 * 52);
 	sheet_setbuf(sht_back, buf_back, binfo->scrnx, binfo->scrny, -1);
 	sheet_setbuf(sht_mouse, buf_mouse, 16, 16, 99);
 	sheet_setbuf(sht_win, buf_win, 160, 52, -1);
@@ -61,8 +63,7 @@ void HariMain(void)
 	sheet_refresh(sht_back, 0, 0, binfo->scrnx, 48);
 
 	for (;;) {
-		count++;
-		sprintf(s, "%010d", count);
+		sprintf(s, "%010d", timerctl.count);
 		boxfill8(buf_win, 160, COL8_C6C6C6, 40, 28, 119, 43);
 		putfonts8_asc(buf_win, 160, 40, 28, COL8_000000, s);
 		sheet_refresh(sht_win, 40, 28, 120, 44);

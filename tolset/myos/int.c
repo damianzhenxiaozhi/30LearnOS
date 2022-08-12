@@ -21,7 +21,6 @@ void init_pic(void)
     return;
 }
 
-
 void inthandler27(int *esp)
 {
     io_out8(PIC0_OCW2, 0x67);

@@ -1,6 +1,6 @@
 #include "bootpack.h"
 
-struct SHTCTL *sheet_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize)
+struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize)
 {
     struct SHTCTL *ctl;
     int i;

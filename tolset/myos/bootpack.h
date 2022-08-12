@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 // asmhead.nas
 struct BOOTINFO { // 0x0ff0-0x0fff
 	char cyls; // read cyls
@@ -23,6 +21,7 @@ int io_load_eflags(void);
 int io_store_eflags(int eflags);
 void load_gdtr(int limit, int addr);
 void load_idtr(int limit, int addr);
+void asm_inthandler20(void);
 void asm_inthandler21(void);
 void asm_inthandler27(void);
 void asm_inthandler2c(void);
@@ -135,7 +134,8 @@ void inthandler27(int *esp);
 #define PIC1_ICW4		0x00a1
 
 // mem.c
-#define MEMMAN_FREES 4090
+#define MEMMAN_ADDR	    0x003c0000
+#define MEMMAN_FREES    4090
 
 struct FREEINFO
 {
@@ -175,7 +175,7 @@ struct SHTCTL {
     struct SHEET sheets0[MAX_SHEETS];
 };
 
-struct SHTCTL *sheet_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize);
+struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize);
 struct SHEET *sheet_alloc(struct SHTCTL *ctl);
 void sheet_setbuf(struct SHEET *sht, unsigned char *buf, int bxsize, int bysize, int col_inv);
 void sheet_updown(struct SHEET *sht, int height);
@@ -184,3 +184,11 @@ void sheet_slide(struct SHEET *sht, int vx0, int vy0);
 void sheet_free(struct SHEET *sht);
 void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0, int h1);
 void sheet_refreshmap(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0);
+
+// timer.c
+struct TIMERCTL {
+    unsigned int count;
+};
+extern struct TIMERCTL timerctl;
+void init_pit(void);
+void inthandler20(int *esp);
