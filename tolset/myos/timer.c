@@ -27,3 +27,15 @@ void inthandler20(int *esp)
     }
     return;
 }
+
+void settimer(unsigned int timeout, struct FIFO8 *fifo, unsigned char data)
+{
+    int eflags;
+    eflags = io_load_eflags();
+    io_cli();
+    timerctl.timeout = timeout;
+    timerctl.fifo = fifo;
+    timerctl.data = data;
+    io_store_eflags(eflags);
+    return;
+}
