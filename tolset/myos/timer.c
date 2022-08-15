@@ -11,6 +11,7 @@ void init_pit(void)
     io_out8(PIT_CNT0, 0x9c);
     io_out8(PIT_CNT0, 0x2e);
     timerctl.count = 0;
+    timerctl.timeout = 0;
     return;
 }
 
@@ -18,5 +19,11 @@ void inthandler20(int *esp)
 {
     io_out8(PIC0_OCW2, 0x60); // 0x60 + 0
     timerctl.count++;
+    if (timerctl.timeout > 0) {
+        timerctl.timeout--;
+        if (timerctl.timeout == 0) {
+            fifo8_put(timerctl.fifo, timerctl.data);
+        }
+    }
     return;
 }
