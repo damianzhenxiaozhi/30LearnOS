@@ -186,13 +186,24 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
 void sheet_refreshmap(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0);
 
 // timer.c
-struct TIMERCTL {
-    unsigned int count;
-    unsigned int timeout;
+#define MAX_TIMERS 500
+
+struct TIMER {
+    unsigned int timeout, flags;
     struct FIFO8 *fifo;
     unsigned char data;
 };
+
+struct TIMERCTL {
+    unsigned int count, next, using;
+    struct TIMER *timers[MAX_TIMERS];
+    struct TIMER timers0[MAX_TIMERS];
+};
+
 extern struct TIMERCTL timerctl;
 void init_pit(void);
 void inthandler20(int *esp);
-void settimer(unsigned int timeout, struct FIFO8 *fifo, unsigned char data);
+struct TIMER *timer_alloc(void);
+void timer_free(struct TIMER *timer);
+void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data);
+void timer_settime(struct TIMER *timer, unsigned int timeout);
