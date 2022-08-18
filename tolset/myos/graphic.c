@@ -150,4 +150,3 @@ void init_screen8(unsigned char *vram, int x, int y)
 	boxfill8(vram, x, COL8_FFFFFF, x - 47, y -  3, x -  4, y -  3);
 	boxfill8(vram, x, COL8_FFFFFF, x -  3, y - 24, x -  3, y -  3);
 }
-

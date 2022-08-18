@@ -15,7 +15,7 @@ void init_pit(void)
     io_out8(PIT_CNT0, 0x9c);
     io_out8(PIT_CNT0, 0x2e);
     timerctl.count = 0;
-    timerctl.next = 0xffffffff;
+    timerctl.next_timeout = 0xffffffff;
     timerctl.using = 0;
     for (i = 0; i < MAX_TIMERS; i++) {
         timerctl.timers0[i].flags = 0;
@@ -41,7 +41,7 @@ void timer_free(struct TIMER *timer)
     return;
 }
 
-void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data)
+void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data)
 {
     timer->fifo = fifo;
     timer->data = data;
@@ -83,7 +83,7 @@ void inthandler20(int *esp)
             break;
         }
         timerctl.timers[i]->flags = TIMER_FLAGS_ALLOC;
-        fifo8_put(timerctl.timers[i]->fifo, timerctl.timers[i]->data);
+        fifo32_put(timerctl.timers[i]->fifo, timerctl.timers[i]->data);
     }
 
     timerctl.using -= i;
