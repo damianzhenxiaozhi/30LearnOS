@@ -10,6 +10,7 @@ struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize
     }
     ctl->map = (unsigned int *)memman_alloc_4k(memman, xsize * ysize);
     if (ctl->map == 0) {
+        memman_free_4k(memman, (int) ctl, sizeof (struct SHTCTL));
         goto err;
     }
     ctl->vram = vram;
@@ -117,7 +118,7 @@ void sheet_slide(struct SHEET *sht, int vx0, int vy0)
     int old_vx0 = sht->vx0, old_vy0 = sht->vy0;
     sht->vx0 = vx0;
     sht->vy0 = vy0;
-    if (sht->height > 0) {
+    if (sht->height >= 0) {
         sheet_refreshmap(sht->ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize, 0);
         sheet_refreshmap(sht->ctl, vx0, vy0, vx0 + sht->bxsize, vy0 + sht->bysize, sht->height);
         sheet_refreshsub(sht->ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize, 0, sht->height - 1);

@@ -60,6 +60,7 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
     struct TIMER *t, *s;
     eflags = io_load_eflags();
     io_cli();
+
     timer->timeout = timeout + timerctl.count;
     timer->flags = TIMER_FLAGS_USING;
 
@@ -77,7 +78,7 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
         t = t->next_timer;
         if (timer->timeout <= t->timeout) {
             s->next_timer = timer;
-            timer->next_timer = t;
+            timer->next_timer = t;    
             io_store_eflags(eflags);
             return;
         }
@@ -102,6 +103,6 @@ void inthandler20(int *esp)
         timer = timer->next_timer;
     }
     timerctl.t0 = timer;
-    timerctl.next_timeout = timerctl.t0->timeout;
+    timerctl.next_timeout = timer->timeout;
     return;
 }

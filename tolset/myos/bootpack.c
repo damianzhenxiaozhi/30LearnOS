@@ -23,7 +23,7 @@ void HariMain(void)
 	init_pic();	   // pic init
 	io_sti();	   // enable interrupt
 
-	fifo32_init(&fifo, 256, fifobuf);
+	fifo32_init(&fifo, 128, fifobuf);
 	init_pit();
 	init_keyboard(&fifo, 256);
 	enable_mouse(&fifo , 512, &mdec);
@@ -75,7 +75,6 @@ void HariMain(void)
 
 	for (;;) {
 		count++;
-
 		io_cli();
 		if (fifo32_status(&fifo) == 0) {
 			io_sti();
@@ -83,7 +82,7 @@ void HariMain(void)
 			i = fifo32_get(&fifo);
 			io_sti();
 			if (256 <= i && i < 512) { // keyboard data
-				sprintf(s, "%02X", i);
+				sprintf(s, "%02X", i - 256);
 				putfonts8_asc_sht(sht_back, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
 			} else if (512 <= i && i < 768) { // mouse data
 				if (mouse_decode(&mdec, i - 512) != 0) {
@@ -195,4 +194,5 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 	boxfill8(sht->buf, sht->bxsize, b, x, y, x + l * 8 - 1, y + 15);
 	putfonts8_asc(sht->buf, sht->bxsize, x, y, c, s);
 	sheet_refresh(sht, x, y, x + l * 8, y + 16);
+	return;
 }

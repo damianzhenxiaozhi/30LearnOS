@@ -6,14 +6,14 @@ void init_gdtidt(void)
     struct GATE_DESCRIPTOR *idt = (struct GATE_DESCRIPTOR *) ADR_IDT;
 
     int i;
-    for (i = 0; i < LIMIT_GDT / 8; i++) {
+    for (i = 0; i <= LIMIT_GDT / 8; i++) {
         set_segmdesc(gdt + i, 0, 0, 0);
     }
     set_segmdesc(gdt + 1, 0xffffffff, 0x00000000, AR_DATA32_RW); 
     set_segmdesc(gdt + 2, LIMIT_BOTPAK, ADR_BOTPAK, AR_CODE32_ER);
     load_gdtr(LIMIT_GDT, ADR_GDT);
 
-    for (i = 0; i < LIMIT_IDT / 8; i++) {
+    for (i = 0; i <= LIMIT_IDT / 8; i++) {
         set_gatedesc(idt + i, 0, 0, 0);
     }
 
@@ -45,7 +45,7 @@ void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, i
 void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar)
 {
     gd->offset_low = offset & 0xffff;
-    gd->selector = selector & 0xffff;
+    gd->selector = selector;
     gd->dw_count = (ar >> 8) & 0xff;
     gd->access_right = ar & 0xff;
     gd->offset_high = (offset >> 16) & 0xffff;
