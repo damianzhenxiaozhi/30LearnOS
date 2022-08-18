@@ -17,6 +17,7 @@ void init_pit(void)
     timerctl.count = 0;
     timerctl.next_timeout = 0xffffffff;
     timerctl.using = 0;
+    timerctl.t0 = 0;
     for (i = 0; i < MAX_TIMERS; i++) {
         timerctl.timers0[i].flags = 0;
     }
@@ -50,50 +51,78 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data)
 
 void timer_settime(struct TIMER *timer, unsigned int timeout)
 {
-    int eflags, i, j;
+    int eflags, i;
+    struct TIMER *t, *s;
     eflags = io_load_eflags();
     io_cli();
     timer->timeout = timeout + timerctl.count;
     timer->flags = TIMER_FLAGS_USING;
-    for (i = 0; i < timerctl.using; i++) {
-        if (timerctl.timers[i]->timeout >= timer->timeout) {
+    timerctl.using++;
+
+    if (timerctl.using == 1) {
+        timerctl.t0 = timer;
+        timer->next_timer = 0;
+        timerctl.next_timeout = timer->timeout;
+        io_store_eflags(eflags);
+        return;
+    }
+
+    t = timerctl.t0;
+    if (timer->timeout <= t->timeout) {
+        timerctl.t0 = timer;
+        timer->next_timer = t;
+        timerctl.next_timeout = timer->timeout;
+        io_store_eflags(eflags);
+        return;
+    }
+
+    for (;;) {
+        s = t;
+        t = t->next_timer;
+        if (t == 0) {
             break;
         }
+
+        if (timer->timeout <= t->timeout) {
+            s->next_timer = timer;
+            timer->next_timer = t;
+            io_store_eflags(eflags);
+            return;
+        }
     }
-    for (j = timerctl.using; j > i; j--) {
-        timerctl.timers[j] = timerctl.timers[j-1];
-    }
-    timerctl.using++;
-    timerctl.timers[i] = timer;
-    timerctl.next = timerctl.timers[0]->timeout;
+
+    s->next_timer = timer;
+    timer->next_timer = 0;
     io_store_eflags(eflags);
     return;
 }
 
 void inthandler20(int *esp)
 {
-    int i, j;
+    int i;
+    struct TIMER *timer;
     io_out8(PIC0_OCW2, 0x60); // 0x60 + 0
     timerctl.count++;
-    if (timerctl.next > timerctl.count) {
+    if (timerctl.next_timeout > timerctl.count) {
         return;
     }
+    timer = timerctl.t0;
     for (i = 0; i < timerctl.using; i++) {
-        if (timerctl.timers[i]->timeout > timerctl.count) {
+        if (timer->timeout > timerctl.count) {
             break;
         }
-        timerctl.timers[i]->flags = TIMER_FLAGS_ALLOC;
-        fifo32_put(timerctl.timers[i]->fifo, timerctl.timers[i]->data);
+        timer->flags = TIMER_FLAGS_ALLOC;
+        fifo32_put(timer->fifo, timer->data);
+        timer = timer->next_timer;
     }
 
     timerctl.using -= i;
-    for (j = 0; j < timerctl.using; j++) {
-        timerctl.timers[j] = timerctl.timers[i + j];
-    }
+    timerctl.t0 = timer;
+
     if (timerctl.using > 0) {
-        timerctl.next = timerctl.timers[0]->timeout;
+        timerctl.next_timeout = timerctl.t0->timeout;
     } else {
-        timerctl.next = 0xffffffff;
+        timerctl.next_timeout = 0xffffffff;
     }
     return;
 }
